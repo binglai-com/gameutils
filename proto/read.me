@@ -1,0 +1,48 @@
+本程序支持将golang的协议文件，转成typescript的协议文件
+golang支持的基本类型:string、uint8、uint16、uint32、int8、int16、int32、slice、struct
+typescript基本类型：string、number、array、class
+
+结构体不加注释则该结构体不会导出到客户端协议文件中
+	tips: 结构体注释需要在结构体上一行且只能占用一行 注释只能用//开始
+结构体中的字段不加注释则该字段不会导出到客户端协议文件中  
+	tips：结构体中字段的注释只能放到该字段定义的后面 可占用一行或多行 支持//开头 和 /* ... */ 两种注释风格
+		//S1结构体定义
+		type S1 struct {
+			//A字段表示....
+			A string
+		}    
+	如上这种在字段前加注释的方式是不支持的 
+	正确方式应该是
+		//S1结构体定义
+		type S1 struct {
+			A string //A字段表示....
+		}
+golang协议文件的格式示例：
+	//结构体注释
+	type TestC struct {
+		A string //字段A注释
+		B uint32 /*字段注释*/
+		C uint32
+		/*
+			....
+			....
+			....
+		*/
+	}
+
+
+
+config.json配置说明：
+{
+	"tspacket":"laya.Message",//ts包名，默认laya.Message
+	"protopath": "proto.go"   //golang协议路径名，默认proto.go  可以是一个具体文件或者一个路径（路径的话将以路径名为根目录搜索目录下的所有.go文件）
+	"structprefix" : ["前缀1","前缀2","前缀3"]  //可选项  如果数组不为空，则只导出以数组内字符串为前缀命名的结构体 否则将全部导出
+}
+
+golang 
+序列化：Pack(Interface{})([]byte, error)//示例bys, err1 := Pack(&data)
+反序列化：UnPack(data []byte, data Interface{}) error//示例err := UnPack(bys, &unpakdata)
+
+typescript 
+序列化：Object.Pack():Byte//消息对象执行Pack方法
+反序列化：Object.UnPack(buf:Byte)//消息执行UnPack方法转为对象
