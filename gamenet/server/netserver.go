@@ -6,8 +6,8 @@ import (
 	"runtime/debug"
 	"time"
 
-	"gameutils/gamelog/filelog"
-	"gameutils/gamenet"
+	"github.com/binglai-com/gameutils/gamelog/filelog"
+	"github.com/binglai-com/gameutils/gamenet"
 
 	"golang.org/x/net/websocket"
 )

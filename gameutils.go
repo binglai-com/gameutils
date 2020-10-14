@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"gameutils/gamelog/filelog"
-	"gameutils/proto"
 	"math/rand"
 	"net/url"
 	"os/exec"
@@ -14,9 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mohae/deepcopy"
-
+	"github.com/binglai-com/gameutils/gamelog/filelog"
+	"github.com/binglai-com/gameutils/proto"
 	"github.com/globalsign/mgo/bson"
+	"github.com/mohae/deepcopy"
 )
 
 //发送报警信息

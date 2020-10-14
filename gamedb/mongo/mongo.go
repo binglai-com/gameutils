@@ -3,12 +3,12 @@ package mongo
 import (
 	"errors"
 	"fmt"
-	"gameutils"
-	"gameutils/gamelog/filelog"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/binglai-com/gameutils"
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )

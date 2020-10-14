@@ -2,9 +2,9 @@ package b3helper
 
 import (
 	"encoding/json"
-	"gameutils/gamelog/filelog"
 	"io/ioutil"
 
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 	"github.com/magicsea/behavior3go"
 	"github.com/magicsea/behavior3go/config"
 	"github.com/magicsea/behavior3go/core"

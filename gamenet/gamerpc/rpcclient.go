@@ -5,13 +5,14 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"gameutils/gamelog/filelog"
 	"io"
 	"net"
 	"net/http"
 	"net/rpc"
 	"sync"
 	"time"
+
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 )
 
 var maxconnretrynum = 1 //网络连接异常导致的最大重试次数

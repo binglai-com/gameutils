@@ -3,13 +3,14 @@ package server
 import (
 	"fmt"
 	"sync"
+
 	//	"fmt"
 	"net"
 	"strings"
 	"time"
 
-	"gameutils/gamelog/filelog"
-	"gameutils/gamenet"
+	"github.com/binglai-com/gameutils/gamelog/filelog"
+	"github.com/binglai-com/gameutils/gamenet"
 )
 
 //发给客户端的数据包

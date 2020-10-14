@@ -12,9 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"gameutils/gamedb/mongo"
-	"gameutils/gamelog/filelog"
-
+	"github.com/binglai-com/gameutils/gamedb/mongo"
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 	"github.com/globalsign/mgo/bson"
 	"github.com/shirou/gopsutil/process"
 )

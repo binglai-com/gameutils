@@ -3,11 +3,12 @@ package gamerpc
 import (
 	"bufio"
 	"encoding/gob"
-	"gameutils/gamelog/filelog"
 	"log"
 	"net/http"
 	"net/rpc"
 	"runtime/debug"
+
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 )
 
 //rpc请求的handler

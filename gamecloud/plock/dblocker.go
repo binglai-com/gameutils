@@ -1,9 +1,9 @@
 package plock
 
 import (
-	"gameutils/gamelog/filelog"
 	"time"
 
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )

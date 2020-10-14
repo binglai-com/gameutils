@@ -1,4 +1,4 @@
-module gameutils
+module github.com/binglai-com/gameutils
 
 go 1.13
 

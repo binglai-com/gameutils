@@ -1,9 +1,10 @@
 package svrconf
 
 import (
-	"gameutils/gamelog/filelog"
 	"net"
 	"os"
+
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 )
 
 //flash安全沙箱服务器  需要制定一个沙箱端口和一个跨域访问的策略文件

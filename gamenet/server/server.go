@@ -3,10 +3,11 @@ package server
 import (
 	"bytes"
 	"encoding/binary"
-	"gameutils/gamelog/filelog"
-	"gameutils/gamenet"
 	"strconv"
 	"strings"
+
+	"github.com/binglai-com/gameutils/gamelog/filelog"
+	"github.com/binglai-com/gameutils/gamenet"
 )
 
 //游戏消息接口  网络或者golang channle中的消息

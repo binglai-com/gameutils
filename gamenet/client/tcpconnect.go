@@ -1,12 +1,13 @@
 package client
 
 import (
-	"gameutils/gamelog/filelog"
-	"gameutils/gamenet"
-	"gameutils/gamenet/server"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/binglai-com/gameutils/gamelog/filelog"
+	"github.com/binglai-com/gameutils/gamenet"
+	"github.com/binglai-com/gameutils/gamenet/server"
 )
 
 const (

@@ -2,9 +2,9 @@ package map2d
 
 import (
 	"errors"
-	"gameutils/gamelog/filelog"
 	"time"
 
+	"github.com/binglai-com/gameutils/gamelog/filelog"
 	"github.com/globalsign/mgo/bson"
 )
 
