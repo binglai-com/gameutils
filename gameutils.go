@@ -249,7 +249,7 @@ type MsgEncoder interface {
 	Simple_Encode(v interface{}) []byte
 }
 
-//binglai二进制序列化方法
+//binglai二进制序列化方法1
 type BingLaiEncoder struct {
 }
 
