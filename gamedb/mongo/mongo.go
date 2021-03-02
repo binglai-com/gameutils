@@ -523,11 +523,11 @@ func (c *DataBase) Init(gconn string) bool {
 
 	//初始化第一个会话
 	originsess, err := mgo.Dial(gconn)
-	originsess.SetMode(mgo.Strong, true)
 	if err != nil {
 		filelog.ERROR("mongodb", fmt.Sprintf("init dbpool error:%s", err.Error()))
 		return false
 	}
+	originsess.SetMode(mgo.Strong, true)
 
 	var now = time.Now()
 	for i := 1; i < c.MaxNum; i++ { //初始化其他会话
