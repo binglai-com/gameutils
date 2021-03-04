@@ -81,6 +81,43 @@ func (database *DataBase) FindCount(dbname string, colname string, find interfac
 	return err
 }
 
+//查找修饰条件
+type FindDecorate struct {
+	Selector   interface{}
+	Skip       int
+	Limit      int
+	SortFileds []string
+}
+
+//根据查找修饰条件筛选记录
+func (database *DataBase) FindMany(dbname string, colname string, find interface{}, decorate FindDecorate, result interface{}) error {
+	conn := database.getdbsession()
+	defer database.freesession(conn)
+	db := conn.c.DB(dbname)
+	col := db.C(colname)
+	query := col.Find(find)
+	if decorate.Selector != nil {
+		query = query.Select(decorate.Selector)
+	}
+
+	if decorate.Skip > 0 {
+		query = query.Skip(decorate.Skip)
+	}
+	if decorate.Limit > 0 {
+		query = query.Limit(decorate.Limit)
+	}
+	if decorate.SortFileds != nil && len(decorate.SortFileds) > 0 {
+		query = query.Sort(decorate.SortFileds...)
+	}
+
+	err := query.All(result)
+	if err != nil && err.Error() != "not found" {
+		//		conn.active = false
+		filelog.ERROR("mongodb", fmt.Sprintf("FindMany error:%s", err.Error()))
+	}
+	return err
+}
+
 func (database *DataBase) FindAllSelector(dbname string, colname string, find interface{}, selector interface{}, result interface{}) error {
 	conn := database.getdbsession()
 	defer database.freesession(conn)
@@ -132,12 +169,29 @@ func (database *DataBase) FindAll(dbname string, colname string, find interface{
 	return err
 }
 
-func (database *DataBase) FindIter(dbname string, colname string, find interface{}, fields ...string) *mgo.Iter {
+func (database *DataBase) FindIter(dbname string, colname string, find interface{}, decorate FindDecorate) *mgo.Iter {
 	conn := database.getdbsession()
 	defer database.freesession(conn)
 	db := conn.c.DB(dbname)
 	col := db.C(colname)
-	return col.Find(find).Sort(fields...).Iter()
+	query := col.Find(find)
+	if decorate.Selector != nil {
+		query.Select(decorate.Selector)
+	}
+
+	if decorate.Skip > 0 {
+		query.Skip(decorate.Skip)
+	}
+
+	if decorate.Limit > 0 {
+		query.Limit(decorate.Limit)
+	}
+
+	if decorate.SortFileds != nil && len(decorate.SortFileds) > 0 {
+		query.Sort(decorate.SortFileds...)
+	}
+
+	return query.Iter()
 }
 
 func (database *DataBase) FindIterSelect(dbname string, colname string, find interface{}, selects interface{}) *mgo.Iter {
@@ -148,12 +202,30 @@ func (database *DataBase) FindIterSelect(dbname string, colname string, find int
 	return col.Find(find).Select(selects).Iter()
 }
 
-func (database *DataBase) FindOne(dbname string, colname string, find interface{}, result interface{}) error {
+func (database *DataBase) FindOne(dbname string, colname string, find interface{}, decorate FindDecorate, result interface{}) error {
 	conn := database.getdbsession()
 	defer database.freesession(conn)
 	db := conn.c.DB(dbname)
 	col := db.C(colname)
-	err := col.Find(find).One(result)
+	query := col.Find(find)
+
+	if decorate.Selector != nil {
+		query.Select(decorate.Selector)
+	}
+
+	if decorate.Skip > 0 {
+		query.Skip(decorate.Skip)
+	}
+
+	if decorate.Limit > 0 {
+		query.Limit(decorate.Limit)
+	}
+
+	if decorate.SortFileds != nil && len(decorate.SortFileds) > 0 {
+		query.Sort(decorate.SortFileds...)
+	}
+
+	err := query.One(result)
 	if err != nil {
 		if err.Error() != "not found" {
 			//			conn.active = false
