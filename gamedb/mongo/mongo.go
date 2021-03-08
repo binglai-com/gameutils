@@ -298,7 +298,7 @@ func (database *DataBase) SetFields(dbname string, colname string, sets interfac
 
 	var _id = gameutils.GetValueByBsonTag(sets, "_id")
 	if _id == nil {
-		return nil, fmt.Errorf("SetFields bson tag _id not found.")
+		return fmt.Errorf("SetFields bson tag _id not found.")
 	}
 
 	conn := database.getdbsession()
