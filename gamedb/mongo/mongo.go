@@ -286,12 +286,12 @@ func (database *DataBase) FindBySkipLimit(dbname string, colname string, find in
 }
 
 //根据字段名保存数据
-func (database *DataBase) SetFields(dbname string, colname string, sets interface{}，fieldsname ...string) error {
+func (database *DataBase) SetFields(dbname string, colname string, sets interface{}, fieldsname ...string) error {
 	var setfields = fieldsname
 	if len(fieldsname) == 0 {
-		setfields = nil 		//默认全部保存
+		setfields = nil //默认全部保存
 	}
-	datas, copyerr := gameutils.CopyByFields(sets,setfields)
+	datas, copyerr := gameutils.CopyByFields(sets, setfields)
 	if copyerr != nil {
 		return copyerr
 	}
@@ -305,7 +305,7 @@ func (database *DataBase) SetFields(dbname string, colname string, sets interfac
 	defer database.freesession(conn)
 	db := conn.c.DB(dbname)
 	col := db.C(colname)
-	return col.Update(bson.M{"_id":_id}, bson.M{"$set":datas})
+	return col.Update(bson.M{"_id": _id}, bson.M{"$set": datas})
 }
 
 func (database *DataBase) Update1(dbname string, colname string, selector interface{}, update interface{}) error {
