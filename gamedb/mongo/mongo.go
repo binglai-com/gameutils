@@ -285,6 +285,29 @@ func (database *DataBase) FindBySkipLimit(dbname string, colname string, find in
 	return err
 }
 
+//根据字段名保存数据
+func (database *DataBase) SetFields(dbname string, colname string, sets interface{}，fieldsname ...string) error {
+	var setfields = fieldsname
+	if len(fieldsname) == 0 {
+		setfields = nil 		//默认全部保存
+	}
+	datas, copyerr := gameutils.CopyByFields(sets,setfields)
+	if copyerr != nil {
+		return copyerr
+	}
+
+	var _id = gameutils.GetValueByBsonTag(sets, "_id")
+	if _id == nil {
+		return nil, fmt.Errorf("SetFields bson tag _id not found.")
+	}
+
+	conn := database.getdbsession()
+	defer database.freesession(conn)
+	db := conn.c.DB(dbname)
+	col := db.C(colname)
+	return col.Update(bson.M{"_id":_id}, bson.M{"$set":datas})
+}
+
 func (database *DataBase) Update1(dbname string, colname string, selector interface{}, update interface{}) error {
 	conn := database.getdbsession()
 	defer database.freesession(conn)
