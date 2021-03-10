@@ -43,6 +43,14 @@ func GetShortUID() string { ///分配一个唯一ID
 	return fmt.Sprintf(`%x`, nid)
 }
 
+func (database *DataBase) EnsureIndex(dbname string, colname string, indexdesc mgo.Index) error {
+	conn := database.getdbsession()
+	defer database.freesession(conn)
+	db := conn.c.DB(dbname)
+	col := db.C(colname)
+	return col.EnsureIndex(indexdesc)
+}
+
 func (database *DataBase) IndexTable(dbname string, colname string, indexname string, key []string, unique bool, dropDups bool) {
 	conn := database.getdbsession()
 	defer database.freesession(conn)
