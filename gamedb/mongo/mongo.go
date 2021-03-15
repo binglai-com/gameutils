@@ -332,6 +332,70 @@ func (database *DataBase) Update1(dbname string, colname string, selector interf
 	return err
 }
 
+type UpdateOps struct {
+	Query        interface{}
+	Update       interface{}
+	Upsert       bool
+	Multi        bool
+	ArrayFilters []bson.M
+	Hint         interface{}
+}
+
+//复杂更新
+func (database *DataBase) Update(dbname string, colname string, ops []UpdateOps, continueonfail ...bool) error {
+	conn := database.getdbsession()
+	defer database.freesession(conn)
+	db := conn.c.DB(dbname)
+
+	var result = struct {
+		Nmodified int
+		Ok        int
+		N         int
+	}{}
+
+	var cmd = bson.D{
+		{"update", colname},
+	}
+
+	if len(continueonfail) > 0 && continueonfail[0] {
+		cmd = append(cmd, bson.DocElem{"ordered", false})
+	}
+
+	var updates = []bson.D{}
+	for _, v := range ops {
+		var subop = bson.D{}
+		if v.Query != nil {
+			subop = append(subop, bson.DocElem{"q", v.Query})
+		} else {
+			subop = append(subop, bson.DocElem{"q", bson.D{}})
+		}
+		subop = append(subop, bson.DocElem{"u", v.Update})
+		subop = append(subop, bson.DocElem{"upsert", v.Upsert})
+		if v.Multi {
+			subop = append(subop, bson.DocElem{"multi", v.Multi})
+		}
+
+		if v.ArrayFilters != nil {
+			subop = append(subop, bson.DocElem{"arrayFilters", v.ArrayFilters})
+		}
+
+		if v.Hint != nil {
+			subop = append(subop, bson.DocElem{"hint", v.Hint})
+		}
+
+		updates = append(updates, subop)
+	}
+
+	cmd = append(cmd, bson.DocElem{"updates", updates})
+	err := db.Run(cmd, &result)
+	if err != nil {
+		filelog.ERROR("mongodb", fmt.Sprintf("Update error:%s", err.Error()))
+		return err
+	}
+
+	return nil
+}
+
 func (database *DataBase) RunCmd(dbname string, cmd interface{}, result interface{}) error {
 	conn := database.getdbsession()
 	defer database.freesession(conn)
@@ -342,6 +406,89 @@ func (database *DataBase) RunCmd(dbname string, cmd interface{}, result interfac
 		return err
 	}
 	return err
+}
+
+type FindAndModifyDecorater struct {
+	Sort         bson.M
+	Remove       bool
+	Update       interface{}
+	New          bool
+	Fields       bson.M
+	UpSert       bool
+	ArrayFilters []bson.M
+	Hint         interface{}
+}
+
+//findAndModify
+func (database *DataBase) FindAndModify(dbname, colname string, query interface{}, opt FindAndModifyDecorater, result interface{}) error {
+	conn := database.getdbsession()
+	defer database.freesession(conn)
+	db := conn.c.DB(dbname)
+	var res = struct {
+		LastErrorObject struct {
+			N               int
+			UpdatedExisting bool
+		}
+		Value bson.M
+		Ok    int
+	}{}
+
+	var cmd = bson.D{
+		{"findAndModify", colname},
+	}
+
+	if query != nil {
+		cmd = append(cmd, bson.DocElem{"query", query})
+	}
+
+	if opt.Remove && opt.Update != nil {
+		return fmt.Errorf("remove and update can not perform in one action")
+	}
+
+	if opt.Update != nil {
+		cmd = append(cmd, bson.DocElem{"update", opt.Update})
+	}
+
+	if opt.Remove {
+		cmd = append(cmd, bson.DocElem{"remove", opt.Remove})
+	}
+
+	if opt.Sort != nil {
+		cmd = append(cmd, bson.DocElem{"sort", opt.Sort})
+	}
+
+	if opt.New {
+		cmd = append(cmd, bson.DocElem{"new", true})
+	}
+
+	if opt.UpSert {
+		cmd = append(cmd, bson.DocElem{"upsert", true})
+	}
+
+	if opt.Fields != nil {
+		cmd = append(cmd, bson.DocElem{"fields", opt.Fields})
+	}
+
+	if opt.ArrayFilters != nil {
+		cmd = append(cmd, bson.DocElem{"arrayFilters", opt.ArrayFilters})
+	}
+
+	if opt.Hint != nil {
+		cmd = append(cmd, bson.DocElem{"hint", opt.Hint})
+	}
+	err := db.Run(cmd, &res)
+	if err != nil {
+		filelog.ERROR("mongodb", fmt.Sprintf("FindAndModify error:%s", err.Error()))
+		return err
+	}
+
+	if res.Ok != 1 { //执行失败
+		filelog.ERROR("mongodb", "FindAndModify ret ", res)
+		return fmt.Errorf("FindAndModify ret %v", res)
+	}
+
+	gameutils.DeepCopy2(result, res.Value)
+	return nil
 }
 
 //获取数据库自增id
@@ -516,7 +663,7 @@ func (database *DataBase) AggregateOne(dbname, colname string, pipeline []bson.M
 	err := col.Pipe(pipeline).One(result)
 	if err != nil && err.Error() != "not found" {
 		//		conn.active = false
-		filelog.ERROR("mongodb", fmt.Sprintf("AggregateOne error:%s", err.Error(), "pipeline:", pipeline))
+		filelog.ERROR("mongodb", fmt.Sprintln("AggregateOne error:", err.Error(), "pipeline:", pipeline))
 	}
 	return err
 }
