@@ -30,7 +30,7 @@ func NewRsaAuthVerifier(pubkeyfile string) (*RsaAuthVerifier, error) {
 
 //验证token是否有效
 func (this *RsaAuthVerifier) Verify(tokenstr string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(tokenstr, jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) { //使用公匙解密
+	return jwt.ParseWithClaims(tokenstr, &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) { //使用公匙解密
 		return this.RSAPubKey, nil
 	})
 }
