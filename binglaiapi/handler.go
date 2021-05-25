@@ -1,7 +1,9 @@
 package binglaiapi
 
 import (
+	"compress/gzip"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -46,7 +48,7 @@ func (api *ApiHandler) Refresh() error {
 		return err
 	}
 
-	if rsp.StatusCode != 200 {
+	if rsp.StatusCode != http.StatusOK {
 		switch rsp.StatusCode {
 		case 444:
 			return fmt.Errorf("444 Invalid AppId")
@@ -66,33 +68,101 @@ func (api *ApiHandler) Refresh() error {
 	}
 }
 
+const (
+	BodyType_None uint8 = 0 + iota
+	BodyType_Bytes
+	BodyType_String
+	BodyType_Json
+	BodyType_Xml
+	BodyTYpe_Yaml
+)
+
 //获取请求响应
-func (api *ApiHandler) Response(req *httplib.BeegoHTTPRequest) (*http.Response, error) {
+func (api *ApiHandler) Response(req *httplib.BeegoHTTPRequest, body interface{}, bodytype uint8) (*http.Response, error) {
 	req.SetTimeout(DialTimeOut, ReadWriteTimeOut).
 		Header("Authorization", api.Token)
 	// req.Header("Authorization", api.Token)
+
+	if bodytype != BodyType_None && body != nil {
+		switch bodytype {
+		case BodyType_Bytes, BodyType_String:
+			req.Body(body)
+		case BodyType_Json:
+			if _, err := req.JSONBody(body); err != nil {
+				return nil, err
+			}
+		case BodyType_Xml:
+			if _, err := req.XMLBody(body); err != nil {
+				return nil, err
+			}
+		case BodyTYpe_Yaml:
+			if _, err := req.YAMLBody(body); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("Unknow Body Type %d", bodytype)
+		}
+	}
 
 	rsp, err := req.DoRequest()
 	if err != nil {
 		return rsp, err
 	}
 
-	if rsp.StatusCode == 401 { //未授权 刷新token
+	if rsp.StatusCode == http.StatusUnauthorized { //未授权 刷新token
 		if err := api.Refresh(); err != nil { //token刷新失败
 			return rsp, err
 		}
 
 		//token刷新后
 		req.Header("Authorization", api.Token)
+		req.GetRequest().Body = nil
+		if bodytype != BodyType_None && body != nil {
+			switch bodytype {
+			case BodyType_Bytes, BodyType_String:
+				req.Body(body)
+			case BodyType_Json:
+				if _, err := req.JSONBody(body); err != nil {
+					return nil, err
+				}
+			case BodyType_Xml:
+				if _, err := req.XMLBody(body); err != nil {
+					return nil, err
+				}
+			case BodyTYpe_Yaml:
+				if _, err := req.YAMLBody(body); err != nil {
+					return nil, err
+				}
+			default:
+				return nil, fmt.Errorf("Unknow Body Type %d", bodytype)
+			}
+		}
+
 		rsp, err = req.DoRequest()
 		if err != nil {
 			return rsp, err
 		}
 
-		if rsp.StatusCode == 401 { //授权失败
+		if rsp.StatusCode == http.StatusUnauthorized { //授权失败
 			return rsp, fmt.Errorf("401 授权失败")
 		}
 	}
 
 	return rsp, nil
+}
+
+func (api *ApiHandler) GetBytes(resp *http.Response) ([]byte, error) {
+	if resp.Body == nil {
+		return nil, nil
+	}
+	defer resp.Body.Close()
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		reader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return ioutil.ReadAll(reader)
+	} else {
+		return ioutil.ReadAll(resp.Body)
+	}
 }

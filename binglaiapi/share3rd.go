@@ -2,6 +2,7 @@ package binglaiapi
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/beego/beego/v2/client/httplib"
 )
@@ -16,12 +17,12 @@ func (api *ApiHandler) GetVerify(Id string, Name string) error {
 		Param("Id", Id).
 		Param("Name", Name)
 
-	rsp, err := api.Response(req)
+	rsp, err := api.Response(req, nil, 0)
 	if err != nil {
 		return err
 	}
 
-	if rsp.StatusCode != 200 { //请求成功
+	if rsp.StatusCode != http.StatusOK { //请求成功
 		switch rsp.StatusCode {
 		case 444:
 			return fmt.Errorf("444 身份证号不合法")
