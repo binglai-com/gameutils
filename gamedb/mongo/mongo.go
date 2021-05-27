@@ -426,11 +426,11 @@ func (database *DataBase) FindAndModify(dbname, colname string, query interface{
 	db := conn.c.DB(dbname)
 	var res = struct {
 		LastErrorObject struct {
-			N               int
-			UpdatedExisting bool
-		}
-		Value bson.M
-		Ok    int
+			Upserted        bson.M `bson:"upserted"`
+			UpdatedExisting bool   `bson:"updatedExisting"`
+		} `bson:"lastErrorObject"`
+		Value bson.M `bson:"value"`
+		Ok    int    `bson:"ok"`
 	}{}
 
 	var cmd = bson.D{
@@ -487,43 +487,59 @@ func (database *DataBase) FindAndModify(dbname, colname string, query interface{
 		return fmt.Errorf("FindAndModify ret %v", res)
 	}
 
+	if !opt.UpSert && !res.LastErrorObject.UpdatedExisting {
+		return mgo.ErrNotFound
+	}
+
 	gameutils.DeepCopy2(result, res.Value)
 	return nil
 }
 
 //获取数据库自增id
 func (database *DataBase) GetAutoIncId(dbname string, colname string) (int64, error) {
-	conn := database.getdbsession()
-	defer database.freesession(conn)
-	db := conn.c.DB(dbname)
-	var result = struct {
-		LastErrorObject struct {
-			N               int
-			UpdatedExisting bool
-		}
-		Value bson.M
-		Ok    int
-	}{}
-	err := db.Run(
-		bson.D{
-			{"findAndModify", "autocounters"},
-			{"query", bson.M{"_id": colname}},
-			{"update", bson.M{"$inc": bson.M{"seqid": int64(1)}}},
-			{"upsert", true},
-			{"new", true},
-		},
-		&result)
-	if err != nil {
+	var res = bson.M{}
+	if err := database.FindAndModify(dbname, "autocounters", bson.M{"_id": colname}, FindAndModifyDecorater{
+		Update: bson.M{"$inc": bson.M{"seqid": int64(1)}},
+		UpSert: true,
+		New:    true,
+	}, &res); err != nil {
 		filelog.ERROR("mongodb", fmt.Sprintf("GetAutoIncId error:%s", err.Error()))
 		return 0, err
 	}
 
-	if result.Ok != 1 { //执行失败
-		filelog.ERROR("mongodb", "GetAutoIncId ret ", result)
-		return 0, fmt.Errorf("GetAutoIncId ret %v", result)
-	}
+	var retid = res["seqid"].(int64)
 
-	var retid = result.Value["seqid"].(int64)
+	// conn := database.getdbsession()
+	// defer database.freesession(conn)
+	// db := conn.c.DB(dbname)
+	// var result = struct {
+	// 	LastErrorObject struct {
+	// 		N               int
+	// 		UpdatedExisting bool
+	// 	}
+	// 	Value bson.M
+	// 	Ok    int
+	// }{}
+	// err := db.Run(
+	// 	bson.D{
+	// 		{"findAndModify", "autocounters"},
+	// 		{"query", bson.M{"_id": colname}},
+	// 		{"update", bson.M{"$inc": bson.M{"seqid": int64(1)}}},
+	// 		{"upsert", true},
+	// 		{"new", true},
+	// 	},
+	// 	&result)
+	// if err != nil {
+	// 	filelog.ERROR("mongodb", fmt.Sprintf("GetAutoIncId error:%s", err.Error()))
+	// 	return 0, err
+	// }
+
+	// if result.Ok != 1 { //执行失败
+	// 	filelog.ERROR("mongodb", "GetAutoIncId ret ", result)
+	// 	return 0, fmt.Errorf("GetAutoIncId ret %v", result)
+	// }
+
+	// var retid = result.Value["seqid"].(int64)
 
 	return retid, nil
 }
