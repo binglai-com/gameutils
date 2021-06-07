@@ -11,7 +11,7 @@ import (
 var (
 	maildomain = "http://175.24.153.177:6002/v1"
 
-// maildomain = "http://127.0.0.1:6002/v1"
+	// maildomain = "http://127.0.0.1:6002/v1"
 )
 
 const (
@@ -261,5 +261,37 @@ func (api *ApiHandler) DeletePlayerMails(pid string, delmailids []int64) error {
 		}
 	} else {
 		return nil
+	}
+}
+
+//向玩家邮箱中复制邮件 （仅用于旧邮件系统升级使用，正常发送邮件请使用 CreateMail ）
+func (api *ApiHandler) PasteMails2MailBox(pid string, maildata BoxMail) (*BoxMail, error) {
+	var req = httplib.Post(maildomain + "/mailbox/pid/" + pid)
+	if maildata.Id != 0 { //除非你知道如何正确的获取邮件id，否则你不应该使用明确的邮件id，可以预见到这样做将会产生重复的邮件id
+		maildata.Id = 0
+	}
+	rsp, err := api.Response(req, maildata, BodyType_Json)
+	if err != nil {
+		return nil, err
+	}
+
+	if rsp.StatusCode != http.StatusOK {
+		switch rsp.StatusCode {
+		case 500:
+			return nil, fmt.Errorf("500 Server error")
+		default:
+			return nil, fmt.Errorf("%d Unknow Status Code", rsp.StatusCode)
+		}
+	} else {
+		if res, err := api.GetBytes(rsp); err != nil {
+			return nil, err
+		} else {
+			var retmail = new(BoxMail)
+			if err := json.Unmarshal(res, retmail); err != nil {
+				return nil, err
+			} else {
+				return retmail, nil
+			}
+		}
 	}
 }
