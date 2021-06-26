@@ -3,6 +3,7 @@ package binglaiapi
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 
 	"github.com/beego/beego/v2/client/httplib"
@@ -11,8 +12,14 @@ import (
 var (
 	maildomain = "http://175.24.153.177:6002/v1"
 
+	maildomain_mailsends = []string{"http://175.24.153.177:6003/v1", "http://175.24.153.177:6004/v1"}
+
 	// maildomain = "http://127.0.0.1:6002/v1"
 )
+
+func _getmailsendsdomain() string {
+	return maildomain_mailsends[rand.Intn(len(maildomain_mailsends))]
+}
 
 const (
 	CondType_Personal int = 0 + iota //个人邮件(发给单个玩家) 直接发送到个人身上，不记录到条件邮件列表中
@@ -73,7 +80,7 @@ func (api *ApiHandler) CreateMail(Title string, Body string, Type int, CondType 
 		CondList: CondList,
 	}
 
-	var req = httplib.Post(maildomain + "/mails/")
+	var req = httplib.Post(_getmailsendsdomain() + "/mails/")
 	rsp, err := api.Response(req, addmail, BodyType_Json)
 	if err != nil {
 		return nil, err
@@ -266,7 +273,7 @@ func (api *ApiHandler) DeletePlayerMails(pid string, delmailids []int64) error {
 
 //向玩家邮箱中复制邮件 （仅用于旧邮件系统升级使用，正常发送邮件请使用 CreateMail ）
 func (api *ApiHandler) PasteMails2MailBox(pid string, maildata BoxMail) (*BoxMail, error) {
-	var req = httplib.Post(maildomain + "/mailbox/pid/" + pid)
+	var req = httplib.Post(_getmailsendsdomain() + "/mailbox/pid/" + pid)
 	if maildata.Id != 0 { //除非你知道如何正确的获取邮件id，否则你不应该使用明确的邮件id，可以预见到这样做将会产生重复的邮件id
 		maildata.Id = 0
 	}
