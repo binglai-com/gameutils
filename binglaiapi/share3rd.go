@@ -15,7 +15,8 @@ var (
 func (api *ApiHandler) GetVerify(Id string, Name string) error {
 	req := httplib.Get(share3rddomain+"/idverify/").
 		Param("Id", Id).
-		Param("Name", Name)
+		Param("Name", Name).
+		Setting(defaulthttpsetting)
 
 	rsp, err := api.Response(req, nil, 0)
 	if err != nil {

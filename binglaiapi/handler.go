@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 
@@ -18,10 +19,35 @@ type ApiHandler struct {
 }
 
 var (
-	authdomain       = "http://175.24.153.177:6000/v1"
-	DialTimeOut      = 30 * time.Second
-	ReadWriteTimeOut = 10 * time.Second
+	authdomain         = "http://175.24.153.177:6000/v1"
+	DialTimeOut        = 30 * time.Second
+	ReadWriteTimeOut   = 10 * time.Second
+	defaulthttpsetting httplib.BeegoHTTPSettings
 )
+
+func init() {
+	defaulthttpsetting = httplib.BeegoHTTPSettings{
+		UserAgent:        "beegoServer",
+		ConnectTimeout:   DialTimeOut,
+		ReadWriteTimeout: ReadWriteTimeOut,
+		Gzip:             true,
+		DumpBody:         true,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   DialTimeOut,
+				KeepAlive: 30 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConnsPerHost:   100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
+
+}
 
 //初始化api handler
 func InitApi(appid string, appkey string) (*ApiHandler, error) {
@@ -38,7 +64,7 @@ func (api *ApiHandler) Refresh() error {
 	var ts = time.Now().Unix()
 	var sign = gameutils.Md5Str(fmt.Sprintf("%s%s%d", api.AppId, api.AppKey, ts))
 	req := httplib.Get(authdomain+"/auth/").
-		SetTimeout(DialTimeOut, ReadWriteTimeOut).
+		Setting(defaulthttpsetting).
 		Param("AppId", api.AppId).
 		Param("Sign", sign).
 		Param("Ts", fmt.Sprintf("%d", ts))
@@ -79,8 +105,7 @@ const (
 
 //获取请求响应
 func (api *ApiHandler) Response(req *httplib.BeegoHTTPRequest, body interface{}, bodytype uint8) (*http.Response, error) {
-	req.SetTimeout(DialTimeOut, ReadWriteTimeOut).
-		Header("Authorization", api.Token)
+	req.Header("Authorization", api.Token)
 	// req.Header("Authorization", api.Token)
 
 	if bodytype != BodyType_None && body != nil {

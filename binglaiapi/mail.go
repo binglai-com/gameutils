@@ -14,7 +14,9 @@ var (
 
 	maildomain_mailsends = []string{"http://175.24.153.177:6003/v1", "http://175.24.153.177:6004/v1"}
 
-	// maildomain = "http://127.0.0.1:6002/v1"
+// maildomain = "http://127.0.0.1:6002/v1"
+
+// maildomain_mailsends = []string{"http://127.0.0.1:6002/v1", "http://127.0.0.1:6002/v1"}
 )
 
 func _getmailsendsdomain() string {
@@ -80,7 +82,7 @@ func (api *ApiHandler) CreateMail(Title string, Body string, Type int, CondType 
 		CondList: CondList,
 	}
 
-	var req = httplib.Post(_getmailsendsdomain() + "/mails/")
+	var req = httplib.Post(_getmailsendsdomain() + "/mails/").Setting(defaulthttpsetting)
 	rsp, err := api.Response(req, addmail, BodyType_Json)
 	if err != nil {
 		return nil, err
@@ -113,7 +115,7 @@ func (api *ApiHandler) CreateMail(Title string, Body string, Type int, CondType 
 
 //获取玩家邮件列表
 func (api *ApiHandler) GetPlayerMailList(pid string) ([]BoxMailDesc, error) {
-	var req = httplib.Get(maildomain + "/mailbox/pid/" + pid)
+	var req = httplib.Get(maildomain + "/mailbox/pid/" + pid).Setting(defaulthttpsetting)
 	rsp, err := api.Response(req, nil, 0)
 	if err != nil {
 		return nil, err
@@ -142,7 +144,7 @@ func (api *ApiHandler) GetPlayerMailList(pid string) ([]BoxMailDesc, error) {
 
 //获取玩家邮箱中的邮件详情
 func (api *ApiHandler) ReadPlayerMail(pid string, mailid int64) (*BoxMail, error) {
-	var req = httplib.Get(maildomain + "/mailbox/pid/" + pid + "/mailid/" + fmt.Sprintf("%d", mailid))
+	var req = httplib.Get(maildomain + "/mailbox/pid/" + pid + "/mailid/" + fmt.Sprintf("%d", mailid)).Setting(defaulthttpsetting)
 	rsp, err := api.Response(req, nil, 0)
 	if err != nil {
 		return nil, err
@@ -171,7 +173,7 @@ func (api *ApiHandler) ReadPlayerMail(pid string, mailid int64) (*BoxMail, error
 
 //领取一封邮件的邮件奖励
 func (api *ApiHandler) ClaimMailItem(pid string, mailid int64) ([]MailItem, error) {
-	var req = httplib.Put(maildomain + "/mailbox/pid/" + pid + "/mailid/" + fmt.Sprintf("%d", mailid))
+	var req = httplib.Put(maildomain + "/mailbox/pid/" + pid + "/mailid/" + fmt.Sprintf("%d", mailid)).Setting(defaulthttpsetting)
 	rsp, err := api.Response(req, nil, 0)
 	if err != nil {
 		return nil, err
@@ -201,7 +203,7 @@ func (api *ApiHandler) ClaimMailItem(pid string, mailid int64) ([]MailItem, erro
 
 //从玩家邮箱中删除一封邮件
 func (api *ApiHandler) DeletePlayerMailById(pid string, mailid int64) error {
-	var req = httplib.Delete(maildomain + "/mailbox/pid/" + pid + "/mailid/" + fmt.Sprintf("%d", mailid))
+	var req = httplib.Delete(maildomain + "/mailbox/pid/" + pid + "/mailid/" + fmt.Sprintf("%d", mailid)).Setting(defaulthttpsetting)
 	rsp, err := api.Response(req, nil, 0)
 	if err != nil {
 		return err
@@ -223,7 +225,7 @@ func (api *ApiHandler) DeletePlayerMailById(pid string, mailid int64) error {
 
 //一键领取所有可领取的邮件奖励
 func (api *ApiHandler) ClaimAllMailItem(pid string) ([]MailItem, error) {
-	var req = httplib.Post(maildomain + "/mailbox/batch/update/pid/" + pid)
+	var req = httplib.Post(maildomain + "/mailbox/batch/update/pid/" + pid).Setting(defaulthttpsetting)
 	rsp, err := api.Response(req, nil, 0)
 	if err != nil {
 		return nil, err
@@ -253,7 +255,7 @@ func (api *ApiHandler) ClaimAllMailItem(pid string) ([]MailItem, error) {
 
 //批量删除玩家邮件
 func (api *ApiHandler) DeletePlayerMails(pid string, delmailids []int64) error {
-	var req = httplib.Post(maildomain + "/mailbox/batch/delete/pid/" + pid)
+	var req = httplib.Post(maildomain + "/mailbox/batch/delete/pid/" + pid).Setting(defaulthttpsetting)
 	rsp, err := api.Response(req, delmailids, BodyType_Json)
 	if err != nil {
 		return err
@@ -273,7 +275,7 @@ func (api *ApiHandler) DeletePlayerMails(pid string, delmailids []int64) error {
 
 //向玩家邮箱中复制邮件 （仅用于旧邮件系统升级使用，正常发送邮件请使用 CreateMail ）
 func (api *ApiHandler) PasteMails2MailBox(pid string, maildata BoxMail) (*BoxMail, error) {
-	var req = httplib.Post(_getmailsendsdomain() + "/mailbox/pid/" + pid)
+	var req = httplib.Post(_getmailsendsdomain() + "/mailbox/pid/" + pid).Setting(defaulthttpsetting)
 	if maildata.Id != 0 { //除非你知道如何正确的获取邮件id，否则你不应该使用明确的邮件id，可以预见到这样做将会产生重复的邮件id
 		maildata.Id = 0
 	}
