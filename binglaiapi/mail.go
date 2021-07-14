@@ -14,9 +14,9 @@ var (
 
 	maildomain_mailsends = []string{"http://175.24.153.177:6003/v1", "http://175.24.153.177:6004/v1"}
 
-// maildomain = "http://127.0.0.1:6002/v1"
+	// maildomain = "http://127.0.0.1:6002/v1"
 
-// maildomain_mailsends = []string{"http://127.0.0.1:6002/v1", "http://127.0.0.1:6002/v1"}
+	// maildomain_mailsends = []string{"http://127.0.0.1:6002/v1", "http://127.0.0.1:6002/v1"}
 )
 
 func _getmailsendsdomain() string {
@@ -56,6 +56,15 @@ type BoxMailDesc struct {
 	IsRead    bool   `json:"isread"`    //阅读状态
 	IsGet     bool   `json:"isget"`     //获取状态
 	HaveItems bool   `json:"haveitems"` //有无可领附件
+}
+
+//分页获取邮箱中邮件数据的返回结构
+type BoxMailListRet struct {
+	Page       int           `json:"page"`       //当前请求页码
+	PageSize   int           `json:"pagesize"`   //当前请求页幅
+	Mails      []BoxMailDesc `json:"mails"`      //当前页邮件数据
+	AllMailCnt int           `json:"mailcnt"`    //一共多少封邮件
+	HaveReward bool          `json:"havereward"` //是否有未领取的邮件奖励
 }
 
 //玩家邮箱中的邮件详情
@@ -137,6 +146,37 @@ func (api *ApiHandler) GetPlayerMailList(pid string) ([]BoxMailDesc, error) {
 				return nil, err
 			} else {
 				return maildescs, nil
+			}
+		}
+	}
+}
+
+//获取玩家邮件列表(分页)
+func (api *ApiHandler) GetPlayerMailListByPage(pid string, page int, pagesize int) (*BoxMailListRet, error) {
+	var req = httplib.Get(maildomain+"/mailbox/pid/"+pid).
+		Setting(defaulthttpsetting).
+		Param("page", fmt.Sprintf("%d", page)).
+		Param("pagesize", fmt.Sprintf("%d", pagesize))
+	rsp, err := api.Response(req, nil, 0)
+	if err != nil {
+		return nil, err
+	}
+	if rsp.StatusCode != http.StatusOK {
+		switch rsp.StatusCode {
+		case 500:
+			return nil, fmt.Errorf("500 Server error")
+		default:
+			return nil, fmt.Errorf("%d Unknow Status Code", rsp.StatusCode)
+		}
+	} else {
+		if res, err := api.GetBytes(rsp); err != nil {
+			return nil, err
+		} else {
+			var maillistret = new(BoxMailListRet)
+			if err := json.Unmarshal(res, maillistret); err != nil {
+				return nil, err
+			} else {
+				return maillistret, nil
 			}
 		}
 	}
